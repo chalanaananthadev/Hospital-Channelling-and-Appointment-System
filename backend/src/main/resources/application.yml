@@ -4,7 +4,7 @@ spring:
   datasource:
     url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/medichannel?sslmode=disable}
     username: ${DATABASE_USERNAME:postgres}
-    password: ${DATABASE_PASSWORD:postgres}
+    password: ${DATABASE_PASSWORD:106sc}
   jpa:
     open-in-view: false
     hibernate:
@@ -46,11 +46,11 @@ management:
 
 medichannel:
   jwt:
-    secret: ${JWT_SECRET}
+    secret: ${JWT_SECRET:superSecretKeyForMediChannelJwtMustBeAtLeast32BytesLong!}
     expiration-ms: ${JWT_EXPIRATION_MS:28800000}
   crypto:
-    aes-key: ${AES_256_KEY}
-    hmac-key: ${HMAC_SHA256_KEY}
+    aes-key: ${AES_256_KEY:dGhpc0lzQTMyeXRlTG9uZ0FFUzI1NktleUZvclRlc3Rpbmc=}
+    hmac-key: ${HMAC_SHA256_KEY:dGhpc0lzQVRlc3RITUFDU2hhMjU2S2V5TXVzdEJlMzJCeXRlc0xvbmc=}
   cors:
     allowed-origin: ${FRONTEND_URL:http://localhost:3000}
   lockout:
@@ -60,7 +60,7 @@ medichannel:
     public-ttl-seconds: ${PUBLIC_CACHE_TTL_SECONDS:120}
   admin:
     email: ${ADMIN_EMAIL:admin@lankacare.lk}
-    password: ${ADMIN_PASSWORD}
+    password: ${ADMIN_PASSWORD:AdminPassword#2026}
     full-name: ${ADMIN_FULL_NAME:System Administrator}
 
 logging:

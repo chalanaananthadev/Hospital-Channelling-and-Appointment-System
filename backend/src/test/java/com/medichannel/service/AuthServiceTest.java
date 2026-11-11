@@ -203,3 +203,4 @@ class AuthServiceTest {
         verify(passwordEncoder).matches(eq("SecretPassword#1"), anyString());
     }
 }
+

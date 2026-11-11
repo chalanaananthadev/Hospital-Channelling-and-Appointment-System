@@ -126,3 +126,4 @@ When deploying to Neon (or when testing cloud database):
    DATABASE_PASSWORD=<your-neon-password>
    ```
 5. In Neon SQL Editor, paste and run `database/schema.sql` and `database/seed-data.sql`.
+

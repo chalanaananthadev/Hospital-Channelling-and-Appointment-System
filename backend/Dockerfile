@@ -24,3 +24,4 @@ ENV PORT=8080
 EXPOSE 8080
 
 ENTRYPOINT ["java", "-XX:+UseG1GC", "-XX:MaxRAMPercentage=75.0", "-jar", "app.jar"]
+

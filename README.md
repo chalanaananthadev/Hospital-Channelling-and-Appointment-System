@@ -130,3 +130,4 @@ docker compose up -d --build
 | **Frontend** | Vercel | *TBD (Deploying in Week 4)* |
 | **Backend API** | Render / Railway | *TBD (Deploying in Week 4)* |
 | **Database** | Neon PostgreSQL | *TBD (Connected)* |
+

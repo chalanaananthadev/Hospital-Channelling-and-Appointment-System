@@ -83,3 +83,4 @@ class MedicalPrivacyGuardTest {
         assertThrows(AccessDeniedException.class, () -> guard.assertCanReadClinical(admin, patientUserId, doctorUserId));
     }
 }
+

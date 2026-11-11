@@ -204,3 +204,4 @@ erDiagram
 | `appointments` | `uq_appointments_number` | Unique slot number per session: no duplicates (BR-03) |
 | `appointments` | `uq_appointments_active_patient` | Partial unique index: only 1 active booking per patient per session (BR-04) |
 | `audit_logs` | `REVOKE UPDATE, DELETE` | Immutable log: audit records can never be modified or erased |
+
