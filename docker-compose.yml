@@ -1,0 +1,66 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: medichannel-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: medichannel
+      POSTGRES_USER: medichannel
+      POSTGRES_PASSWORD: medichannel_secret_password_123
+      TZ: Asia/Colombo
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./database/seed-data.sql:/docker-entrypoint-initdb.d/02-seed-data.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U medichannel -d medichannel"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: medichannel-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/medichannel?sslmode=disable
+      DATABASE_USERNAME: medichannel
+      DATABASE_PASSWORD: medichannel_secret_password_123
+      JWT_SECRET: superSecretKeyForMediChannelJwtMustBeAtLeast32BytesLong!
+      JWT_EXPIRATION_MS: 28800000
+      AES_256_KEY: dGhpc0lzQTMyeXRlTG9uZ0FFUzI1NktleUZvclRlc3Rpbmc=
+      HMAC_SHA256_KEY: dGhpc0lzQVRlc3RITUFDU2hhMjU2S2V5TXVzdEJlMzJCeXRlc0xvbmc=
+      FRONTEND_URL: http://localhost:3000
+      ADMIN_EMAIL: admin@lankacare.lk
+      ADMIN_PASSWORD: AdminPassword#2026
+      ADMIN_FULL_NAME: System Administrator
+      TZ: Asia/Colombo
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: medichannel-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      API_URL: http://backend:8080
+      COOKIE_SECURE: "false"
+      NODE_ENV: production
+    ports:
+      - "3000:3000"
+
+volumes:
+  pgdata:
