@@ -37,8 +37,8 @@ services:
       DATABASE_PASSWORD: medichannel_secret_password_123
       JWT_SECRET: superSecretKeyForMediChannelJwtMustBeAtLeast32BytesLong!
       JWT_EXPIRATION_MS: 28800000
-      AES_256_KEY: dGhpc0lzQTMyeXRlTG9uZ0FFUzI1NktleUZvclRlc3Rpbmc=
-      HMAC_SHA256_KEY: dGhpc0lzQVRlc3RITUFDU2hhMjU2S2V5TXVzdEJlMzJCeXRlc0xvbmc=
+      AES_256_KEY: zuUTdXKGhIpZVZFopA65Qy7LZzYiOIRsvGwkXwuFCvo=
+      HMAC_SHA256_KEY: jN4NcAz/f6GM+g8hWw1l/Hm0/vRwNPWvRSyrVjNWMHk=
       FRONTEND_URL: http://localhost:3000
       ADMIN_EMAIL: admin@lankacare.lk
       ADMIN_PASSWORD: AdminPassword#2026

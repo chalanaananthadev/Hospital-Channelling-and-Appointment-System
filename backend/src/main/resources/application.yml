@@ -25,7 +25,7 @@ spring:
       mode: never
 
 server:
-  port: ${PORT:8080}
+  port: ${PORT:8085}
   compression:
     enabled: true
     mime-types: application/json,application/xml,text/html,text/xml,text/plain,application/javascript,text/css
@@ -49,8 +49,8 @@ medichannel:
     secret: ${JWT_SECRET:superSecretKeyForMediChannelJwtMustBeAtLeast32BytesLong!}
     expiration-ms: ${JWT_EXPIRATION_MS:28800000}
   crypto:
-    aes-key: ${AES_256_KEY:dGhpc0lzQTMyeXRlTG9uZ0FFUzI1NktleUZvclRlc3Rpbmc=}
-    hmac-key: ${HMAC_SHA256_KEY:dGhpc0lzQVRlc3RITUFDU2hhMjU2S2V5TXVzdEJlMzJCeXRlc0xvbmc=}
+    aes-key: ${AES_256_KEY:zuUTdXKGhIpZVZFopA65Qy7LZzYiOIRsvGwkXwuFCvo=}
+    hmac-key: ${HMAC_SHA256_KEY:jN4NcAz/f6GM+g8hWw1l/Hm0/vRwNPWvRSyrVjNWMHk=}
   cors:
     allowed-origin: ${FRONTEND_URL:http://localhost:3000}
   lockout:

@@ -57,7 +57,7 @@ public class AuthService {
         this.lockDuration = Duration.ofMinutes(lockMinutes);
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = ApiException.class)
     public AuthResponse login(LoginRequest request, String ipAddress) {
         String emailHmac = hmacSha256Hasher.hashEmail(request.email());
         UserAccount user = userAccountRepository.findByEmailHmac(emailHmac).orElse(null);

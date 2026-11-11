@@ -15,9 +15,6 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -25,9 +22,6 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.UUID;
 
-@Getter
-@Setter
-@NoArgsConstructor
 @Entity
 @Table(name = "sessions")
 public class ChannelSession {
@@ -81,6 +75,53 @@ public class ChannelSession {
 
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
+
+    public ChannelSession() {}
+
+    public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
+
+    public Doctor getDoctor() { return doctor; }
+    public void setDoctor(Doctor doctor) { this.doctor = doctor; }
+
+    public Room getRoom() { return room; }
+    public void setRoom(Room room) { this.room = room; }
+
+    public LocalDate getSessionDate() { return sessionDate; }
+    public void setSessionDate(LocalDate sessionDate) { this.sessionDate = sessionDate; }
+
+    public LocalTime getStartTime() { return startTime; }
+    public void setStartTime(LocalTime startTime) { this.startTime = startTime; }
+
+    public LocalTime getEndTime() { return endTime; }
+    public void setEndTime(LocalTime endTime) { this.endTime = endTime; }
+
+    public SessionType getSessionType() { return sessionType; }
+    public void setSessionType(SessionType sessionType) { this.sessionType = sessionType; }
+
+    public int getMaxPatients() { return maxPatients; }
+    public void setMaxPatients(int maxPatients) { this.maxPatients = maxPatients; }
+
+    public int getMinutesPerPatient() { return minutesPerPatient; }
+    public void setMinutesPerPatient(int minutesPerPatient) { this.minutesPerPatient = minutesPerPatient; }
+
+    public BigDecimal getFee() { return fee; }
+    public void setFee(BigDecimal fee) { this.fee = fee; }
+
+    public int getDelayMinutes() { return delayMinutes; }
+    public void setDelayMinutes(int delayMinutes) { this.delayMinutes = delayMinutes; }
+
+    public SessionStatus getStatus() { return status; }
+    public void setStatus(SessionStatus status) { this.status = status; }
+
+    public Integer getNowServing() { return nowServing; }
+    public void setNowServing(Integer nowServing) { this.nowServing = nowServing; }
+
+    public Instant getCreatedAt() { return createdAt; }
+    public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+
+    public Instant getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
 
     @PrePersist
     void onCreate() {

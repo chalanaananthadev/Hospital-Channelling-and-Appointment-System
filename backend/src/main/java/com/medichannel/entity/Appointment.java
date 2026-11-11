@@ -19,17 +19,11 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.time.Instant;
 import java.time.LocalTime;
 import java.util.UUID;
 
-@Getter
-@Setter
-@NoArgsConstructor
 @Entity
 @Table(name = "appointments")
 public class Appointment {
@@ -83,6 +77,50 @@ public class Appointment {
 
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
+
+    public Appointment() {}
+
+    public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
+
+    public ChannelSession getSession() { return session; }
+    public void setSession(ChannelSession session) { this.session = session; }
+
+    public Patient getPatient() { return patient; }
+    public void setPatient(Patient patient) { this.patient = patient; }
+
+    public int getAppointmentNumber() { return appointmentNumber; }
+    public void setAppointmentNumber(int appointmentNumber) { this.appointmentNumber = appointmentNumber; }
+
+    public SessionType getAppointmentType() { return appointmentType; }
+    public void setAppointmentType(SessionType appointmentType) { this.appointmentType = appointmentType; }
+
+    public String getReasonForVisit() { return reasonForVisit; }
+    public void setReasonForVisit(String reasonForVisit) { this.reasonForVisit = reasonForVisit; }
+
+    public AppointmentStatus getStatus() { return status; }
+    public void setStatus(AppointmentStatus status) { this.status = status; }
+
+    public PaymentStatus getPaymentStatus() { return paymentStatus; }
+    public void setPaymentStatus(PaymentStatus paymentStatus) { this.paymentStatus = paymentStatus; }
+
+    public PaymentMethod getPaymentMethod() { return paymentMethod; }
+    public void setPaymentMethod(PaymentMethod paymentMethod) { this.paymentMethod = paymentMethod; }
+
+    public LocalTime getEstimatedTime() { return estimatedTime; }
+    public void setEstimatedTime(LocalTime estimatedTime) { this.estimatedTime = estimatedTime; }
+
+    public String getBookingReference() { return bookingReference; }
+    public void setBookingReference(String bookingReference) { this.bookingReference = bookingReference; }
+
+    public Instant getCancelledAt() { return cancelledAt; }
+    public void setCancelledAt(Instant cancelledAt) { this.cancelledAt = cancelledAt; }
+
+    public Instant getCreatedAt() { return createdAt; }
+    public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+
+    public Instant getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
 
     @PrePersist
     void onCreate() {

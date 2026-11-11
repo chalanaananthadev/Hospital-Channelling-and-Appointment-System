@@ -1,4 +1,4 @@
-const API_URL = process.env.API_URL ?? "http://localhost:8080";
+const API_URL = process.env.API_URL ?? "http://localhost:8085";
 
 export async function backendFetch(path: string, init: RequestInit = {}, token?: string | null) {
   const headers = new Headers(init.headers);

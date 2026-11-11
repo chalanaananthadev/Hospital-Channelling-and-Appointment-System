@@ -12,16 +12,10 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.time.Instant;
 import java.util.UUID;
 
-@Getter
-@Setter
-@NoArgsConstructor
 @Entity
 @Table(name = "chat_messages")
 public class ChatMessage {
@@ -44,6 +38,23 @@ public class ChatMessage {
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
+
+    public ChatMessage() {}
+
+    public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
+
+    public Consultation getConsultation() { return consultation; }
+    public void setConsultation(Consultation consultation) { this.consultation = consultation; }
+
+    public UserAccount getSender() { return sender; }
+    public void setSender(UserAccount sender) { this.sender = sender; }
+
+    public String getBody() { return body; }
+    public void setBody(String body) { this.body = body; }
+
+    public Instant getCreatedAt() { return createdAt; }
+    public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
 
     @PrePersist
     void onCreate() {
