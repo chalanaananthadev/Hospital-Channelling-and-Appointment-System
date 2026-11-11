@@ -1,0 +1,56 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  backend-test:
+    name: Backend Build & Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build and Run Unit Tests
+        working-directory: ./backend
+        run: mvn clean test -B
+        env:
+          JWT_SECRET: superSecretKeyForMediChannelJwtMustBeAtLeast32BytesLong!
+          AES_256_KEY: dGhpc0lzQTMyeXRlTG9uZ0FFUzI1NktleUZvclRlc3Rpbmc=
+          HMAC_SHA256_KEY: dGhpc0lzQVRlc3RITUFDU2hhMjU2S2V5TXVzdEJlMzJCeXRlc0xvbmc=
+          ADMIN_PASSWORD: AdminPassword#2026
+
+  frontend-build:
+    name: Frontend Typecheck & Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: './frontend/package.json'
+
+      - name: Install Dependencies
+        working-directory: ./frontend
+        run: npm install
+
+      - name: Build Next.js
+        working-directory: ./frontend
+        run: npm run build
+        env:
+          API_URL: http://localhost:8080
+          COOKIE_SECURE: 'false'
