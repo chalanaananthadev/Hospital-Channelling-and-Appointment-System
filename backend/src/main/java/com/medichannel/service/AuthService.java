@@ -1,6 +1,7 @@
 package com.medichannel.service;
 
 import com.medichannel.dto.auth.AuthResponse;
+import com.medichannel.dto.auth.ChangePasswordRequest;
 import com.medichannel.dto.auth.LoginRequest;
 import com.medichannel.dto.auth.MeResponse;
 import com.medichannel.dto.auth.RegisterPatientRequest;
@@ -139,6 +140,27 @@ public class AuthService {
                 user.getEmail(),
                 user.isMustChangePassword()
         );
+    }
+
+    @Transactional
+    public void changePassword(UserAccount user, ChangePasswordRequest request, String ipAddress) {
+        UserAccount target = userAccountRepository.findById(user.getId())
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "User not found"));
+
+        if (!passwordEncoder.matches(request.currentPassword(), target.getPasswordHash())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Current password does not match");
+        }
+
+        if (request.newPassword().equals(request.currentPassword())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "New password cannot be the same as the current password");
+        }
+
+        target.setPasswordHash(passwordEncoder.encode(request.newPassword()));
+        target.setMustChangePassword(false);
+        target.setFailedLoginAttempts(0);
+        userAccountRepository.save(target);
+
+        auditService.record(target, AuditAction.PASSWORD_CHANGED, "USER", target.getId(), ipAddress);
     }
 
     private AuthResponse toAuthResponse(UserAccount user) {

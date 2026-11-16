@@ -1,6 +1,7 @@
 package com.medichannel.controller;
 
 import com.medichannel.dto.auth.AuthResponse;
+import com.medichannel.dto.auth.ChangePasswordRequest;
 import com.medichannel.dto.auth.LoginRequest;
 import com.medichannel.dto.auth.MeResponse;
 import com.medichannel.dto.auth.RegisterPatientRequest;
@@ -52,5 +53,17 @@ public class AuthController {
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noStore())
                 .body(authService.me(principal.getUser()));
+    }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<Void> changePassword(
+            @Valid @RequestBody ChangePasswordRequest request,
+            @AuthenticationPrincipal AuthenticatedUser principal,
+            HttpServletRequest http
+    ) {
+        authService.changePassword(principal.getUser(), request, http.getRemoteAddr());
+        return ResponseEntity.noContent()
+                .cacheControl(CacheControl.noStore())
+                .build();
     }
 }
