@@ -428,20 +428,20 @@ public class DataSeeder implements ApplicationRunner {
         feedbackRepository.save(fb2);
 
         // 10. Notifications of each of the 5 types
-        seedNotification(p1User, NotificationType.APPOINTMENT_CONFIRMED, "Appointment Confirmed",
-                "Your appointment #1 with Dr. Kavindu Perera has been confirmed.", session1, apt1);
+        seedNotification(p1User, NotificationType.CALLED, "Now Calling Appointment #1",
+                "Your number has been called for Room 101. Please enter the consultation room.", session1, apt1);
 
-        seedNotification(p4User, NotificationType.QUEUE_UPDATE, "Live Queue Update",
-                "Now serving number 3. Please be present at Waiting Area A, Room 101.", session1, apt4);
+        seedNotification(p4User, NotificationType.THREE_AWAY, "Three Away Notice",
+                "You are 3 numbers away from being served. Please be present at Waiting Area A.", session1, apt4);
 
-        seedNotification(p3User, NotificationType.DELAY_ALERT, "Doctor Delay Notice",
+        seedNotification(p3User, NotificationType.SESSION_DELAYED, "Doctor Delay Notice",
                 "Dr. Kavindu Perera's clinic is running approximately 10 minutes delayed.", session1, apt3);
 
-        seedNotification(p1User, NotificationType.PRESCRIPTION_READY, "Prescription Ready",
-                "Your digital consultation record and prescription are ready to download.", session1, apt1);
+        seedNotification(p4User, NotificationType.SESSION_CANCELLED, "Session Cancellation Notice",
+                "Dr. Kavindu Perera's clinic on next week has been cancelled.", session4, apt8);
 
-        seedNotification(p2User, NotificationType.SYSTEM, "Welcome to MediChannel",
-                "Your Lanka Care Hospital profile is verified. Access your health records anytime.", null, null);
+        seedNotification(p3User, NotificationType.CONSULTATION_STARTED, "Online Consultation Ready",
+                "Your doctor has started the consultation session. Tap to join chat.", session3, apt7);
 
         // 11. Notice
         seedNotice(admin);
@@ -518,8 +518,8 @@ public class DataSeeder implements ApplicationRunner {
             BigDecimal fee,
             String bio
     ) {
-        return doctorRepository.findByActiveTrue().stream()
-                .filter(d -> d.getUser().getId().equals(user.getId()))
+        return doctorRepository.findAll().stream()
+                .filter(d -> d.getSlmcNumber().equals(slmcNumber) || d.getUser().getId().equals(user.getId()))
                 .findFirst()
                 .orElseGet(() -> {
                     Specialisation specialisation = specialisationRepository.findByNameIgnoreCase(specialisationName)
@@ -536,17 +536,21 @@ public class DataSeeder implements ApplicationRunner {
     }
 
     private Patient ensurePatient(UserAccount user, String nic, String dob, Gender gender, String phone, String address) {
-        return patientRepository.findByUserId(user.getId()).orElseGet(() -> {
-            Patient patient = new Patient();
-            patient.setUser(user);
-            patient.setNic(HmacSha256Hasher.normaliseNic(nic));
-            patient.setNicHmac(hmacSha256Hasher.hashNic(nic));
-            patient.setDateOfBirth(dob);
-            patient.setGender(gender);
-            patient.setPhone(phone);
-            patient.setAddress(address);
-            return patientRepository.save(patient);
-        });
+        String nicHmac = hmacSha256Hasher.hashNic(nic);
+        return patientRepository.findAll().stream()
+                .filter(p -> (p.getNicHmac() != null && p.getNicHmac().equals(nicHmac)) || p.getUser().getId().equals(user.getId()))
+                .findFirst()
+                .orElseGet(() -> {
+                    Patient patient = new Patient();
+                    patient.setUser(user);
+                    patient.setNic(HmacSha256Hasher.normaliseNic(nic));
+                    patient.setNicHmac(nicHmac);
+                    patient.setDateOfBirth(dob);
+                    patient.setGender(gender);
+                    patient.setPhone(phone);
+                    patient.setAddress(address);
+                    return patientRepository.save(patient);
+                });
     }
 
     private void seedNotice(UserAccount admin) {
