@@ -76,9 +76,12 @@ public class DataSeeder implements ApplicationRunner {
             @Value("${medichannel.admin.email}") String adminEmail,
             @Value("${medichannel.admin.password}") String adminPassword,
             @Value("${medichannel.admin.full-name}") String adminName,
-            @Value("${medichannel.seed.demo:true}") boolean seedDemo,
-            @Value("${medichannel.seed.password:ChangeMe#1}") String seedPassword
+            @Value("${medichannel.seed.demo:false}") boolean seedDemo,
+            @Value("${medichannel.seed.password:}") String seedPassword
     ) {
+        if (seedDemo && (seedPassword == null || seedPassword.trim().isEmpty())) {
+            throw new IllegalStateException("medichannel.seed.demo is enabled (SEED_DEMO=true), but SEED_PASSWORD is missing or blank.");
+        }
         this.userAccountRepository = userAccountRepository;
         this.patientRepository = patientRepository;
         this.specialisationRepository = specialisationRepository;

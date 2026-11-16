@@ -30,7 +30,7 @@
 
 ---
 
-## Table of Files Included (118 files)
+## Table of Files Included (120 files)
 
 - [.env.example](#file--env-example)
 - [.github/workflows/ci.yml](#file--github-workflows-ci-yml)
@@ -121,6 +121,8 @@
 - [backend/src/test/java/com/medichannel/security/JwtServiceTest.java](#file-backend-src-test-java-com-medichannel-security-jwtservicetest-java)
 - [backend/src/test/java/com/medichannel/security/MedicalPrivacyGuardTest.java](#file-backend-src-test-java-com-medichannel-security-medicalprivacyguardtest-java)
 - [backend/src/test/java/com/medichannel/service/AuthServiceTest.java](#file-backend-src-test-java-com-medichannel-service-authservicetest-java)
+- [backend/src/test/resources/application-test.yml](#file-backend-src-test-resources-application-test-yml)
+- [backend/src/test/resources/application.yml](#file-backend-src-test-resources-application-yml)
 - [database/schema.sql](#file-database-schema-sql)
 - [database/seed-data.sql](#file-database-seed-data-sql)
 - [docker-compose.yml](#file-docker-compose-yml)
@@ -156,46 +158,47 @@
 ## File: `.env.example`
 
 ```shell
-# ==========================================
-# MediChannel Hospital System - Environment Config
-# ==========================================
+# ==============================================================================
+# MediChannel Hospital System - Environment Configuration Template
+# ==============================================================================
+# IMPORTANT: Never commit actual secret values to version control.
+# Copy this file to .env and provide generated secrets before running.
 
-# Database Configuration (Local PostgreSQL / pgAdmin 4 or Cloud Neon DB)
-# For Local pgAdmin 4:
+# Database Configuration (PostgreSQL / Neon DB)
 DATABASE_URL=jdbc:postgresql://localhost:5432/medichannel?sslmode=disable
 DATABASE_USERNAME=postgres
-DATABASE_PASSWORD=your_postgres_password_here
-
-# For Neon PostgreSQL (Cloud Production):
-# DATABASE_URL=jdbc:postgresql://ep-project-id.ap-southeast-1.aws.neon.tech/neondb?sslmode=require
-# DATABASE_USERNAME=neondb_owner
-# DATABASE_PASSWORD=your_neon_db_password
+DATABASE_PASSWORD=CHANGE_ME_DATABASE_PASSWORD
 
 # Security & Cryptography Keys
-# AES_256_KEY: Base64-encoded 32-byte key (generate via: openssl rand -base64 32)
-AES_256_KEY=zuUTdXKGhIpZVZFopA65Qy7LZzYiOIRsvGwkXwuFCvo=
+# AES_256_KEY: Base64-encoded 32-byte key (Generate via: openssl rand -base64 32)
+AES_256_KEY=CHANGE_ME_base64_32_bytes
 
-# HMAC_SHA256_KEY: Base64-encoded key of at least 32 bytes
-HMAC_SHA256_KEY=jN4NcAz/f6GM+g8hWw1l/Hm0/vRwNPWvRSyrVjNWMHk=
+# HMAC_SHA256_KEY: Base64-encoded 32-byte key (Generate via: openssl rand -base64 32)
+HMAC_SHA256_KEY=CHANGE_ME_base64_32_bytes
 
-# JWT Secret (At least 32 characters)
-JWT_SECRET=superSecretKeyForMediChannelJwtMustBeAtLeast32BytesLong!
+# JWT Secret: Base64-encoded secret of at least 48 bytes (Generate via: openssl rand -base64 48)
+JWT_SECRET=CHANGE_ME_base64_48_bytes
 JWT_EXPIRATION_MS=28800000
 
-# Initial System Administrator (Created at first startup from env vars)
+# Initial System Administrator Credentials
 ADMIN_EMAIL=admin@lankacare.lk
-ADMIN_PASSWORD=AdminPassword#2026
+ADMIN_PASSWORD=CHANGE_ME_ADMIN_PASSWORD_StrongP@ss1
 ADMIN_FULL_NAME=System Administrator
 
-# CORS and URLs
+# Demo Data Seeding
+# Set SEED_DEMO=true to seed initial doctor, manager, patient and appointments
+SEED_DEMO=false
+# Required if SEED_DEMO=true
+SEED_PASSWORD=CHANGE_ME_DEMO_SEED_PASSWORD_StrongP@ss1
+
+# Service Ports and URLs
 FRONTEND_URL=http://localhost:3000
 API_URL=http://localhost:8080
+PORT=8080
 COOKIE_SECURE=false
 
-# Cache and Lockout Settings
+# Cache Settings
 PUBLIC_CACHE_TTL_SECONDS=120
-PORT=8080
-
 ```
 
 ---
@@ -207,9 +210,9 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, develop, chalana, feature/*]
   pull_request:
-    branches: [main, develop]
+    branches: [main, develop, chalana]
 
 jobs:
   backend-test:
@@ -226,14 +229,17 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
+      - name: Generate throwaway runtime test secrets
+        run: |
+          echo "AES_256_KEY=$(openssl rand -base64 32)" >> $GITHUB_ENV
+          echo "HMAC_SHA256_KEY=$(openssl rand -base64 32)" >> $GITHUB_ENV
+          echo "JWT_SECRET=$(openssl rand -base64 48)" >> $GITHUB_ENV
+          echo "ADMIN_PASSWORD=$(openssl rand -hex 16)A#1" >> $GITHUB_ENV
+          echo "DATABASE_PASSWORD=$(openssl rand -hex 16)" >> $GITHUB_ENV
+
       - name: Build and Run Unit Tests
         working-directory: ./backend
         run: mvn clean test -B
-        env:
-          JWT_SECRET: superSecretKeyForMediChannelJwtMustBeAtLeast32BytesLong!
-          AES_256_KEY: dGhpc0lzQTMyeXRlTG9uZ0FFUzI1NktleUZvclRlc3Rpbmc=
-          HMAC_SHA256_KEY: dGhpc0lzQVRlc3RITUFDU2hhMjU2S2V5TXVzdEJlMzJCeXRlc0xvbmc=
-          ADMIN_PASSWORD: AdminPassword#2026
 
   frontend-build:
     name: Frontend Typecheck & Build
@@ -348,11 +354,37 @@ Copy `.env.example` to `.env` (or configure in your shell / IDE):
 ```env
 DATABASE_URL=jdbc:postgresql://localhost:5432/medichannel?sslmode=disable
 DATABASE_USERNAME=postgres
-DATABASE_PASSWORD=YOUR_PASSWORD_HERE
-AES_256_KEY=dGhpc0lzQTMyeXRlTG9uZ0FFUzI1NktleUZvclRlc3Rpbmc=
-HMAC_SHA256_KEY=dGhpc0lzQVRlc3RITUFDU2hhMjU2S2V5TXVzdEJlMzJCeXRlc0xvbmc=
-JWT_SECRET=superSecretKeyForMediChannelJwtMustBeAtLeast32BytesLong!
+DATABASE_PASSWORD=CHANGE_ME_DATABASE_PASSWORD
+AES_256_KEY=CHANGE_ME_base64_32_bytes
+HMAC_SHA256_KEY=CHANGE_ME_base64_32_bytes
+JWT_SECRET=CHANGE_ME_base64_48_bytes
 ```
+
+---
+
+## 4. Environment Variables
+
+All secrets must be provided via environment variables or a local `.env` file (which is git-ignored). **Never commit real secret values to GitHub.**
+
+| Variable Name | Required | Default / Fallback | How to Generate / Description |
+| :--- | :---: | :--- | :--- |
+| `DATABASE_URL` | No | `jdbc:postgresql://localhost:5432/medichannel?sslmode=disable` | JDBC connection string for local PostgreSQL or Neon Cloud DB |
+| `DATABASE_USERNAME` | No | `postgres` | Database username |
+| `DATABASE_PASSWORD` | **Yes** | *None (Fails fast if missing)* | Your local PostgreSQL or Neon DB password |
+| `AES_256_KEY` | **Yes** | *None (Fails fast if missing)* | Generate via: `openssl rand -base64 32` (Must decode to 32 bytes) |
+| `HMAC_SHA256_KEY` | **Yes** | *None (Fails fast if missing)* | Generate via: `openssl rand -base64 32` (Must decode to 32 bytes) |
+| `JWT_SECRET` | **Yes** | *None (Fails fast if missing)* | Generate via: `openssl rand -base64 48` (At least 32 characters) |
+| `JWT_EXPIRATION_MS` | No | `28800000` (8 hours) | Token lifespan in milliseconds |
+| `ADMIN_EMAIL` | No | `admin@lankacare.lk` | Initial super-admin login email |
+| `ADMIN_PASSWORD` | **Yes** | *None (Fails fast if missing)* | Super-admin initial password (must satisfy strong password policy) |
+| `ADMIN_FULL_NAME` | No | `System Administrator` | Initial super-admin display name |
+| `SEED_DEMO` | No | `false` | Set to `true` to seed fictional doctor, manager, and patient accounts |
+| `SEED_PASSWORD` | Optional | *None* | Required if `SEED_DEMO=true` (initial password for demo accounts) |
+| `FRONTEND_URL` | No | `http://localhost:3000` | Allowed CORS origin for Spring Boot |
+| `API_URL` | No | `http://localhost:8080` | Backend API URL used by Next.js Route Handlers |
+| `PORT` | No | `8080` | Backend HTTP listening port |
+| `COOKIE_SECURE` | No | `false` | Set `true` in production (HTTPS) for `Secure` cookie flag |
+| `PUBLIC_CACHE_TTL_SECONDS` | No | `120` | Caffeine cache TTL for public doctor and specialisation catalog |
 
 ---
 
@@ -406,20 +438,31 @@ docker compose up -d --build
 ## File: `backend/.env.example`
 
 ```shell
+# ==============================================================================
+# MediChannel Backend - Environment Configuration Template
+# ==============================================================================
 DATABASE_URL=jdbc:postgresql://localhost:5432/medichannel?sslmode=disable
 DATABASE_USERNAME=postgres
-DATABASE_PASSWORD=your_postgres_password_here
-JWT_SECRET=superSecretKeyForMediChannelJwtMustBeAtLeast32BytesLong!
-JWT_EXPIRATION_MS=28800000
-AES_256_KEY=zuUTdXKGhIpZVZFopA65Qy7LZzYiOIRsvGwkXwuFCvo=
-HMAC_SHA256_KEY=jN4NcAz/f6GM+g8hWw1l/Hm0/vRwNPWvRSyrVjNWMHk=
-FRONTEND_URL=http://localhost:3000
-ADMIN_EMAIL=admin@lankacare.lk
-ADMIN_PASSWORD=AdminPassword#2026
-ADMIN_FULL_NAME=System Administrator
-PUBLIC_CACHE_TTL_SECONDS=120
-PORT=8080
+DATABASE_PASSWORD=CHANGE_ME_DATABASE_PASSWORD
 
+# Generate via: openssl rand -base64 48
+JWT_SECRET=CHANGE_ME_base64_48_bytes
+JWT_EXPIRATION_MS=28800000
+
+# Generate via: openssl rand -base64 32
+AES_256_KEY=CHANGE_ME_base64_32_bytes
+HMAC_SHA256_KEY=CHANGE_ME_base64_32_bytes
+
+ADMIN_EMAIL=admin@lankacare.lk
+ADMIN_PASSWORD=CHANGE_ME_ADMIN_PASSWORD_StrongP@ss1
+ADMIN_FULL_NAME=System Administrator
+
+SEED_DEMO=false
+SEED_PASSWORD=CHANGE_ME_DEMO_SEED_PASSWORD_StrongP@ss1
+
+FRONTEND_URL=http://localhost:3000
+PORT=8080
+PUBLIC_CACHE_TTL_SECONDS=120
 ```
 
 ---
@@ -675,9 +718,12 @@ public class DataSeeder implements ApplicationRunner {
             @Value("${medichannel.admin.email}") String adminEmail,
             @Value("${medichannel.admin.password}") String adminPassword,
             @Value("${medichannel.admin.full-name}") String adminName,
-            @Value("${medichannel.seed.demo:true}") boolean seedDemo,
-            @Value("${medichannel.seed.password:ChangeMe#1}") String seedPassword
+            @Value("${medichannel.seed.demo:false}") boolean seedDemo,
+            @Value("${medichannel.seed.password:}") String seedPassword
     ) {
+        if (seedDemo && (seedPassword == null || seedPassword.trim().isEmpty())) {
+            throw new IllegalStateException("medichannel.seed.demo is enabled (SEED_DEMO=true), but SEED_PASSWORD is missing or blank.");
+        }
         this.userAccountRepository = userAccountRepository;
         this.patientRepository = patientRepository;
         this.specialisationRepository = specialisationRepository;
@@ -4323,7 +4369,7 @@ spring:
   datasource:
     url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/medichannel?sslmode=disable}
     username: ${DATABASE_USERNAME:postgres}
-    password: ${DATABASE_PASSWORD:106sc}
+    password: ${DATABASE_PASSWORD}
   jpa:
     open-in-view: false
     hibernate:
@@ -4344,7 +4390,7 @@ spring:
       mode: never
 
 server:
-  port: ${PORT:8085}
+  port: ${PORT:8080}
   compression:
     enabled: true
     mime-types: application/json,application/xml,text/html,text/xml,text/plain,application/javascript,text/css
@@ -4365,11 +4411,11 @@ management:
 
 medichannel:
   jwt:
-    secret: ${JWT_SECRET:superSecretKeyForMediChannelJwtMustBeAtLeast32BytesLong!}
+    secret: ${JWT_SECRET}
     expiration-ms: ${JWT_EXPIRATION_MS:28800000}
   crypto:
-    aes-key: ${AES_256_KEY:zuUTdXKGhIpZVZFopA65Qy7LZzYiOIRsvGwkXwuFCvo=}
-    hmac-key: ${HMAC_SHA256_KEY:jN4NcAz/f6GM+g8hWw1l/Hm0/vRwNPWvRSyrVjNWMHk=}
+    aes-key: ${AES_256_KEY}
+    hmac-key: ${HMAC_SHA256_KEY}
   cors:
     allowed-origin: ${FRONTEND_URL:http://localhost:3000}
   lockout:
@@ -4379,8 +4425,11 @@ medichannel:
     public-ttl-seconds: ${PUBLIC_CACHE_TTL_SECONDS:120}
   admin:
     email: ${ADMIN_EMAIL:admin@lankacare.lk}
-    password: ${ADMIN_PASSWORD:AdminPassword#2026}
+    password: ${ADMIN_PASSWORD}
     full-name: ${ADMIN_FULL_NAME:System Administrator}
+  seed:
+    demo: ${SEED_DEMO:false}
+    password: ${SEED_PASSWORD:}
 
 logging:
   level:
@@ -5083,6 +5132,88 @@ class AuthServiceTest {
 
 ---
 
+## File: `backend/src/test/resources/application-test.yml`
+
+```yaml
+# ==============================================================================
+# FAKE TEST-ONLY CONFIGURATION
+# These values are exclusively for unit and integration testing.
+# They are clearly fake placeholders and MUST NEVER be used in production.
+# ==============================================================================
+spring:
+  application:
+    name: medichannel-api-test
+  datasource:
+    url: jdbc:postgresql://localhost:5432/medichannel?sslmode=disable
+    username: postgres
+    password: TEST_ONLY_DATABASE_PASSWORD_NOT_REAL
+  jpa:
+    hibernate:
+      ddl-auto: none
+
+medichannel:
+  jwt:
+    # 64-character fake JWT secret for tests
+    secret: TEST_ONLY_JWT_SECRET_KEY_FOR_UNIT_TESTS_MUST_BE_AT_LEAST_32_BYTES_LONG_123456
+    expiration-ms: 3600000
+  crypto:
+    # Base64 of the 32-character string "TEST_ONLY_NOT_A_REAL_KEY_00000000" (fake test key)
+    aes-key: VEVTVF9PTkxZX05PVF9BX1JFQUxfS0VZXzAwMDAwMDAw
+    hmac-key: VEVTVF9PTkxZX05PVF9BX1JFQUxfS0VZXzAwMDAwMDAw
+  cors:
+    allowed-origin: http://localhost:3000
+  admin:
+    email: testadmin@lankacare.lk
+    password: TestAdminPassword#2026
+    full-name: Test Administrator
+  seed:
+    demo: false
+    password: ""
+```
+
+---
+
+## File: `backend/src/test/resources/application.yml`
+
+```yaml
+# ==============================================================================
+# FAKE TEST-ONLY CONFIGURATION
+# These values are exclusively for unit and integration testing.
+# They are clearly fake placeholders and MUST NEVER be used in production.
+# ==============================================================================
+spring:
+  application:
+    name: medichannel-api-test
+  datasource:
+    url: jdbc:postgresql://localhost:5432/medichannel?sslmode=disable
+    username: postgres
+    password: TEST_ONLY_DATABASE_PASSWORD_NOT_REAL
+  jpa:
+    hibernate:
+      ddl-auto: none
+
+medichannel:
+  jwt:
+    # 64-character fake JWT secret for tests
+    secret: TEST_ONLY_JWT_SECRET_KEY_FOR_UNIT_TESTS_MUST_BE_AT_LEAST_32_BYTES_LONG_123456
+    expiration-ms: 3600000
+  crypto:
+    # Base64 of the 32-character string "TEST_ONLY_NOT_A_REAL_KEY_00000000" (fake test key)
+    aes-key: VEVTVF9PTkxZX05PVF9BX1JFQUxfS0VZXzAwMDAwMDAw
+    hmac-key: VEVTVF9PTkxZX05PVF9BX1JFQUxfS0VZXzAwMDAwMDAw
+  cors:
+    allowed-origin: http://localhost:3000
+  admin:
+    email: testadmin@lankacare.lk
+    password: TestAdminPassword#2026
+    full-name: Test Administrator
+  seed:
+    demo: false
+    password: ""
+```
+
+---
+
 ## File: `database/schema.sql`
 
 ```sql
@@ -5352,17 +5483,15 @@ ON CONFLICT (name) DO NOTHING;
 ## File: `docker-compose.yml`
 
 ```yaml
-version: "3.8"
-
 services:
   postgres:
     image: postgres:16-alpine
     container_name: medichannel-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: medichannel
-      POSTGRES_USER: medichannel
-      POSTGRES_PASSWORD: medichannel_secret_password_123
+      POSTGRES_DB: ${DATABASE_NAME:-medichannel}
+      POSTGRES_USER: ${DATABASE_USERNAME:-medichannel}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:?DATABASE_PASSWORD is required in .env}
       TZ: Asia/Colombo
     ports:
       - "5432:5432"
@@ -5371,7 +5500,7 @@ services:
       - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
       - ./database/seed-data.sql:/docker-entrypoint-initdb.d/02-seed-data.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U medichannel -d medichannel"]
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME:-medichannel} -d ${DATABASE_NAME:-medichannel}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -5386,17 +5515,19 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      DATABASE_URL: jdbc:postgresql://postgres:5432/medichannel?sslmode=disable
-      DATABASE_USERNAME: medichannel
-      DATABASE_PASSWORD: medichannel_secret_password_123
-      JWT_SECRET: superSecretKeyForMediChannelJwtMustBeAtLeast32BytesLong!
-      JWT_EXPIRATION_MS: 28800000
-      AES_256_KEY: zuUTdXKGhIpZVZFopA65Qy7LZzYiOIRsvGwkXwuFCvo=
-      HMAC_SHA256_KEY: jN4NcAz/f6GM+g8hWw1l/Hm0/vRwNPWvRSyrVjNWMHk=
-      FRONTEND_URL: http://localhost:3000
-      ADMIN_EMAIL: admin@lankacare.lk
-      ADMIN_PASSWORD: AdminPassword#2026
-      ADMIN_FULL_NAME: System Administrator
+      DATABASE_URL: ${DATABASE_URL:-jdbc:postgresql://postgres:5432/medichannel?sslmode=disable}
+      DATABASE_USERNAME: ${DATABASE_USERNAME:-medichannel}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:?DATABASE_PASSWORD is required in .env}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required in .env}
+      JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-28800000}
+      AES_256_KEY: ${AES_256_KEY:?AES_256_KEY is required in .env}
+      HMAC_SHA256_KEY: ${HMAC_SHA256_KEY:?HMAC_SHA256_KEY is required in .env}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@lankacare.lk}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ADMIN_PASSWORD is required in .env}
+      ADMIN_FULL_NAME: ${ADMIN_FULL_NAME:-System Administrator}
+      SEED_DEMO: ${SEED_DEMO:-false}
+      SEED_PASSWORD: ${SEED_PASSWORD:-}
       TZ: Asia/Colombo
     ports:
       - "8080:8080"
@@ -5410,15 +5541,14 @@ services:
     depends_on:
       - backend
     environment:
-      API_URL: http://backend:8080
-      COOKIE_SECURE: "false"
+      API_URL: ${API_URL:-http://backend:8080}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
       NODE_ENV: production
     ports:
       - "3000:3000"
 
 volumes:
   pgdata:
-
 ```
 
 ---

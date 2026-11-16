@@ -1,36 +1,46 @@
-# Secrets
+# Secrets & Environment variables
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
+backend/.env
+backend/.env.*
+!backend/.env.example
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
+!frontend/.env.example
 *.pem
 *.p12
 credentials*
 secrets/
 
-# Java / Maven
+# Build outputs
+target/
 backend/target/
-backend/.idea/
+node_modules/
+frontend/node_modules/
+.next/
+frontend/.next/
+frontend/out/
+frontend/.turbo/
+
+# Java / Maven
 *.class
 *.jar
 *.war
 hs_err_pid*
 
-# Node / Next.js
-frontend/node_modules/
-frontend/.next/
-frontend/out/
-frontend/.turbo/
+# Logs
+*.log
 npm-debug.log*
 yarn-error.log*
-
-# OS / IDE
-.DS_Store
-Thumbs.db
-.idea/
-.vscode/
-*.iml
-
-# Logs and test output
-*.log
 coverage/
 .nyc_output/
+
+# IDE / Editor configuration
+.idea/
+backend/.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db

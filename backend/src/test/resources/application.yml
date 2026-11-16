@@ -1,0 +1,34 @@
+# ==============================================================================
+# FAKE TEST-ONLY CONFIGURATION
+# These values are exclusively for unit and integration testing.
+# They are clearly fake placeholders and MUST NEVER be used in production.
+# ==============================================================================
+spring:
+  application:
+    name: medichannel-api-test
+  datasource:
+    url: jdbc:postgresql://localhost:5432/medichannel?sslmode=disable
+    username: postgres
+    password: TEST_ONLY_DATABASE_PASSWORD_NOT_REAL
+  jpa:
+    hibernate:
+      ddl-auto: none
+
+medichannel:
+  jwt:
+    # 64-character fake JWT secret for tests
+    secret: TEST_ONLY_JWT_SECRET_KEY_FOR_UNIT_TESTS_MUST_BE_AT_LEAST_32_BYTES_LONG_123456
+    expiration-ms: 3600000
+  crypto:
+    # Base64 of 32 ASCII bytes "01234567890123456789012345678901" (clearly fake test key)
+    aes-key: MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE=
+    hmac-key: MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE=
+  cors:
+    allowed-origin: http://localhost:3000
+  admin:
+    email: testadmin@lankacare.lk
+    password: TestAdminPassword#2026
+    full-name: Test Administrator
+  seed:
+    demo: false
+    password: ""

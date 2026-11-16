@@ -80,11 +80,37 @@ Copy `.env.example` to `.env` (or configure in your shell / IDE):
 ```env
 DATABASE_URL=jdbc:postgresql://localhost:5432/medichannel?sslmode=disable
 DATABASE_USERNAME=postgres
-DATABASE_PASSWORD=YOUR_PASSWORD_HERE
-AES_256_KEY=dGhpc0lzQTMyeXRlTG9uZ0FFUzI1NktleUZvclRlc3Rpbmc=
-HMAC_SHA256_KEY=dGhpc0lzQVRlc3RITUFDU2hhMjU2S2V5TXVzdEJlMzJCeXRlc0xvbmc=
-JWT_SECRET=superSecretKeyForMediChannelJwtMustBeAtLeast32BytesLong!
+DATABASE_PASSWORD=CHANGE_ME_DATABASE_PASSWORD
+AES_256_KEY=CHANGE_ME_base64_32_bytes
+HMAC_SHA256_KEY=CHANGE_ME_base64_32_bytes
+JWT_SECRET=CHANGE_ME_base64_48_bytes
 ```
+
+---
+
+## 4. Environment Variables
+
+All secrets must be provided via environment variables or a local `.env` file (which is git-ignored). **Never commit real secret values to GitHub.**
+
+| Variable Name | Required | Default / Fallback | How to Generate / Description |
+| :--- | :---: | :--- | :--- |
+| `DATABASE_URL` | No | `jdbc:postgresql://localhost:5432/medichannel?sslmode=disable` | JDBC connection string for local PostgreSQL or Neon Cloud DB |
+| `DATABASE_USERNAME` | No | `postgres` | Database username |
+| `DATABASE_PASSWORD` | **Yes** | *None (Fails fast if missing)* | Your local PostgreSQL or Neon DB password |
+| `AES_256_KEY` | **Yes** | *None (Fails fast if missing)* | Generate via: `openssl rand -base64 32` (Must decode to 32 bytes) |
+| `HMAC_SHA256_KEY` | **Yes** | *None (Fails fast if missing)* | Generate via: `openssl rand -base64 32` (Must decode to 32 bytes) |
+| `JWT_SECRET` | **Yes** | *None (Fails fast if missing)* | Generate via: `openssl rand -base64 48` (At least 32 characters) |
+| `JWT_EXPIRATION_MS` | No | `28800000` (8 hours) | Token lifespan in milliseconds |
+| `ADMIN_EMAIL` | No | `admin@lankacare.lk` | Initial super-admin login email |
+| `ADMIN_PASSWORD` | **Yes** | *None (Fails fast if missing)* | Super-admin initial password (must satisfy strong password policy) |
+| `ADMIN_FULL_NAME` | No | `System Administrator` | Initial super-admin display name |
+| `SEED_DEMO` | No | `false` | Set to `true` to seed fictional doctor, manager, and patient accounts |
+| `SEED_PASSWORD` | Optional | *None* | Required if `SEED_DEMO=true` (initial password for demo accounts) |
+| `FRONTEND_URL` | No | `http://localhost:3000` | Allowed CORS origin for Spring Boot |
+| `API_URL` | No | `http://localhost:8080` | Backend API URL used by Next.js Route Handlers |
+| `PORT` | No | `8080` | Backend HTTP listening port |
+| `COOKIE_SECURE` | No | `false` | Set `true` in production (HTTPS) for `Secure` cookie flag |
+| `PUBLIC_CACHE_TTL_SECONDS` | No | `120` | Caffeine cache TTL for public doctor and specialisation catalog |
 
 ---
 
