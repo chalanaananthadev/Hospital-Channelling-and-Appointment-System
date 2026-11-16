@@ -1,6 +1,6 @@
 # Lanka Care Hospital — MediChannel
 
-A secure, real-time hospital channelling and appointment system built with **Next.js (App Router)**, **Spring Boot 3**, and **PostgreSQL**.
+A secure, real-time hospital channelling and appointment system built with **Next.js 15 (App Router)**, **Spring Boot 3.4.5 (Java 21)**, and **PostgreSQL 16+**.
 
 ---
 
@@ -19,7 +19,7 @@ MediChannel solves the manual channelling bottlenecks of Lanka Care Hospital, Co
 
 ```
 Hospital Channelling and Appointment System/
-├── backend/                     # Spring Boot 3 REST API & STOMP WebSockets
+├── backend/                     # Spring Boot 3.4.5 (Java 21) REST API & STOMP WebSockets (Port 8080)
 │   ├── src/main/java/com/medichannel/
 │   │   ├── bootstrap/          # Startup data seeding & initial Admin creation
 │   │   ├── config/             # Security, Cache, WebMvc, WebSockets
@@ -30,26 +30,30 @@ Hospital Channelling and Appointment System/
 │   │   ├── exception/          # Global Exception Handler (standard JSON error format)
 │   │   ├── repository/         # Spring Data JPA Repositories
 │   │   ├── security/           # AES-256-GCM converter, HMAC-SHA256 hasher, JWT filters
-│   │   ├── service/            # Core business services
+│   │   ├── service/            # Core business services & cache components
 │   │   └── validation/         # Custom Sri Lankan NIC, phone, and password validators
 │   ├── src/main/resources/
 │   │   ├── db/                 # schema.sql and seed-data.sql
 │   │   └── application.yml     # Application configuration
 │   ├── Dockerfile              # Multi-stage production container build
 │   └── pom.xml
-├── frontend/                    # Next.js 15 (App Router)
+├── frontend/                    # Next.js 15 (App Router, TypeScript) (Port 3000)
 │   ├── src/app/                # Route groups ((public), patient, doctor, manager, admin)
 │   │   └── api/auth/           # Route Handlers for HttpOnly & Secure JWT cookies
-│   ├── src/lib/                # API helpers and cookie managers
+│   ├── src/lib/                # API helpers, client IP forwarding, cookie managers
 │   ├── Dockerfile              # Multi-stage container build
 │   └── package.json
 ├── database/                    # Database definitions and migration scripts
-│   ├── schema.sql              # 13 tables, keys, constraints, and indexes
+│   ├── schema.sql              # 13 tables, keys, constraints, exclusion rules, and triggers
 │   └── seed-data.sql           # Reference specialisations & rooms
-├── docs/                        # Architecture, ERD, and pgAdmin guides
-│   ├── architecture.md
-│   ├── erd.md
-│   └── pgadmin-setup-guide.md
+├── docs/                        # System documentation, security evidence & verification checklists
+│   ├── architecture.md         # Monorepo architecture and security reference
+│   ├── erd.md                  # Entity Relationship Diagram & data dictionary
+│   ├── pgadmin-setup-guide.md  # Step-by-step pgAdmin 4 local database setup
+│   ├── websocket-security-contract.md # Member 4 STOMP WebSocket contract
+│   ├── ai-usage-declaration.md # Generative AI usage declaration template (SLIIT)
+│   ├── security-evidence-checklist.md # Viva & report screenshot checklist
+│   └── audit-log-immutability-verification.md # psql trigger verification steps
 ├── docker-compose.yml           # Local multi-container orchestration
 ├── .env.example                 # Environment variable templates
 └── README.md
@@ -140,10 +144,17 @@ docker compose up -d --build
    - Generic error returned: `Invalid email or password`.
 4. **Server-Side Medical Privacy Guard**:
    - Hardened `MedicalPrivacyFilter` and `MedicalPrivacyGuard` blocking ADMIN and MANAGER from clinical endpoints and records.
-5. **HttpOnly Secure Cookies**:
-   - Next.js Route Handlers (`/api/auth/login`, `/api/auth/register`, `/api/auth/logout`) manage JWT tokens inside `HttpOnly`, `Secure`, `SameSite=Strict` cookies.
-6. **Public Catalog Caching & Compression**:
-   - In-memory Caffeine cache with 120s TTL for doctors and specialisations.
+5. **HttpOnly, Secure & SameSite=Strict Cookies**:
+   - Next.js Route Handlers (`/api/auth/login`, `/api/auth/register`, `/api/auth/logout`, `/api/auth/change-password`) manage JWT tokens inside `HttpOnly`, `Secure`, `SameSite=Strict` cookies (`mc_token`).
+   - `SameSite=Strict` is safely applied because the frontend and backend are unified behind Next.js route handlers (`/api/auth/*`), eliminating CSRF vulnerabilities without requiring cross-site cookies.
+6. **Real Client IP Forwarding**:
+   - Next.js route handlers extract client IP from `X-Forwarded-For` and forward it upstream; Spring Boot's native forward-headers strategy populates `request.getRemoteAddr()`, logging real client IPs in `audit_logs` without storing them alongside PII.
+7. **Database Immutability Triggers & Concurrency Constraints**:
+   - PostgreSQL trigger `prevent_audit_log_change()` rejects any `UPDATE`, `DELETE`, or `TRUNCATE` on `audit_logs`.
+   - GIST exclusion constraints prevent overlapping sessions for the same doctor or room.
+   - Row-level pessimistic write locking (`findByIdForUpdate`) prevents race conditions during concurrent appointment bookings (BR-03 max_patients cap).
+8. **Public Catalog Caching & Compression**:
+   - In-memory Caffeine cache with 120s TTL for doctors and specialisations (Spring proxy self-invocation resolved via `PublicDoctorCatalogCache`).
    - `Cache-Control: public, max-age=120` for catalog; `Cache-Control: no-store` for all PII and clinical data.
    - Gzip compression enabled for all JSON responses > 1KB.
 
