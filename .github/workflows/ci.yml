@@ -2,9 +2,9 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, develop, chalana, feature/*]
   pull_request:
-    branches: [main, develop]
+    branches: [main, develop, chalana]
 
 jobs:
   backend-test:
@@ -21,14 +21,17 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
+      - name: Generate throwaway runtime test secrets
+        run: |
+          echo "AES_256_KEY=$(openssl rand -base64 32)" >> $GITHUB_ENV
+          echo "HMAC_SHA256_KEY=$(openssl rand -base64 32)" >> $GITHUB_ENV
+          echo "JWT_SECRET=$(openssl rand -base64 48)" >> $GITHUB_ENV
+          echo "ADMIN_PASSWORD=$(openssl rand -hex 16)A#1" >> $GITHUB_ENV
+          echo "DATABASE_PASSWORD=$(openssl rand -hex 16)" >> $GITHUB_ENV
+
       - name: Build and Run Unit Tests
         working-directory: ./backend
         run: mvn clean test -B
-        env:
-          JWT_SECRET: superSecretKeyForMediChannelJwtMustBeAtLeast32BytesLong!
-          AES_256_KEY: dGhpc0lzQTMyeXRlTG9uZ0FFUzI1NktleUZvclRlc3Rpbmc=
-          HMAC_SHA256_KEY: dGhpc0lzQVRlc3RITUFDU2hhMjU2S2V5TXVzdEJlMzJCeXRlc0xvbmc=
-          ADMIN_PASSWORD: AdminPassword#2026
 
   frontend-build:
     name: Frontend Typecheck & Build

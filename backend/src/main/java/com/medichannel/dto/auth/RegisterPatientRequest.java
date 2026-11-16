@@ -20,6 +20,6 @@ public record RegisterPatientRequest(
         @NotNull Gender gender,
         @SriLankanPhone String phone,
         @NotBlank @Size(max = 250) String address,
-        @StrongPassword String password
+        @StrongPassword @Size(max = 72) String password
 ) {
 }

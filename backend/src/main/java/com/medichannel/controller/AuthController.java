@@ -1,6 +1,7 @@
 package com.medichannel.controller;
 
 import com.medichannel.dto.auth.AuthResponse;
+import com.medichannel.dto.auth.ChangePasswordRequest;
 import com.medichannel.dto.auth.LoginRequest;
 import com.medichannel.dto.auth.MeResponse;
 import com.medichannel.dto.auth.RegisterPatientRequest;
@@ -30,7 +31,7 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request, HttpServletRequest http) {
-        AuthResponse body = authService.login(request, clientIp(http));
+        AuthResponse body = authService.login(request, http.getRemoteAddr());
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noStore())
                 .body(body);
@@ -41,7 +42,7 @@ public class AuthController {
             @Valid @RequestBody RegisterPatientRequest request,
             HttpServletRequest http
     ) {
-        AuthResponse body = authService.registerPatient(request, clientIp(http));
+        AuthResponse body = authService.registerPatient(request, http.getRemoteAddr());
         return ResponseEntity.status(HttpStatus.CREATED)
                 .cacheControl(CacheControl.noStore())
                 .body(body);
@@ -54,11 +55,15 @@ public class AuthController {
                 .body(authService.me(principal.getUser()));
     }
 
-    private String clientIp(HttpServletRequest request) {
-        String forwarded = request.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) {
-            return forwarded.split(",")[0].trim();
-        }
-        return request.getRemoteAddr();
+    @PostMapping("/change-password")
+    public ResponseEntity<Void> changePassword(
+            @Valid @RequestBody ChangePasswordRequest request,
+            @AuthenticationPrincipal AuthenticatedUser principal,
+            HttpServletRequest http
+    ) {
+        authService.changePassword(principal.getUser(), request, http.getRemoteAddr());
+        return ResponseEntity.noContent()
+                .cacheControl(CacheControl.noStore())
+                .build();
     }
 }

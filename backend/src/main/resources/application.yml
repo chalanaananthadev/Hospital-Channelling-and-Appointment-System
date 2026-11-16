@@ -4,7 +4,7 @@ spring:
   datasource:
     url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/medichannel?sslmode=disable}
     username: ${DATABASE_USERNAME:postgres}
-    password: ${DATABASE_PASSWORD:106sc}
+    password: ${DATABASE_PASSWORD}
   jpa:
     open-in-view: false
     hibernate:
@@ -25,7 +25,9 @@ spring:
       mode: never
 
 server:
-  port: ${PORT:8085}
+  port: ${PORT:8080}
+  # Render/reverse proxy is the trusted upstream
+  forward-headers-strategy: native
   compression:
     enabled: true
     mime-types: application/json,application/xml,text/html,text/xml,text/plain,application/javascript,text/css
@@ -46,11 +48,11 @@ management:
 
 medichannel:
   jwt:
-    secret: ${JWT_SECRET:superSecretKeyForMediChannelJwtMustBeAtLeast32BytesLong!}
+    secret: ${JWT_SECRET}
     expiration-ms: ${JWT_EXPIRATION_MS:28800000}
   crypto:
-    aes-key: ${AES_256_KEY:zuUTdXKGhIpZVZFopA65Qy7LZzYiOIRsvGwkXwuFCvo=}
-    hmac-key: ${HMAC_SHA256_KEY:jN4NcAz/f6GM+g8hWw1l/Hm0/vRwNPWvRSyrVjNWMHk=}
+    aes-key: ${AES_256_KEY}
+    hmac-key: ${HMAC_SHA256_KEY}
   cors:
     allowed-origin: ${FRONTEND_URL:http://localhost:3000}
   lockout:
@@ -60,8 +62,11 @@ medichannel:
     public-ttl-seconds: ${PUBLIC_CACHE_TTL_SECONDS:120}
   admin:
     email: ${ADMIN_EMAIL:admin@lankacare.lk}
-    password: ${ADMIN_PASSWORD:AdminPassword#2026}
+    password: ${ADMIN_PASSWORD}
     full-name: ${ADMIN_FULL_NAME:System Administrator}
+  seed:
+    demo: ${SEED_DEMO:false}
+    password: ${SEED_PASSWORD:}
 
 logging:
   level:

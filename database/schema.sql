@@ -4,6 +4,7 @@
 -- email_hmac / nic_hmac store HMAC-SHA256 of the normalised plaintext for lookup.
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
+CREATE EXTENSION IF NOT EXISTS btree_gist;
 
 CREATE TABLE users (
     id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -104,6 +105,14 @@ CREATE TABLE sessions (
         OR (session_type = 'ONLINE' AND room_id IS NULL)
     )
 );
+
+ALTER TABLE sessions ADD CONSTRAINT no_overlapping_doctor_sessions
+    EXCLUDE USING gist (doctor_id WITH =, tsrange(session_date + start_time, session_date + end_time) WITH &&)
+    WHERE (status <> 'CANCELLED');
+
+ALTER TABLE sessions ADD CONSTRAINT no_overlapping_room_sessions
+    EXCLUDE USING gist (room_id WITH =, tsrange(session_date + start_time, session_date + end_time) WITH &&)
+    WHERE (status <> 'CANCELLED' AND room_id IS NOT NULL);
 
 CREATE TABLE appointments (
     id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -214,6 +223,25 @@ CREATE TABLE audit_logs (
     created_at              TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Trigger preventing UPDATE, DELETE or TRUNCATE on audit_logs
+CREATE OR REPLACE FUNCTION prevent_audit_log_change() RETURNS trigger AS $$
+BEGIN
+    RAISE EXCEPTION 'audit_logs is immutable';
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_audit_logs_no_update ON audit_logs;
+CREATE TRIGGER trg_audit_logs_no_update
+    BEFORE UPDATE OR DELETE ON audit_logs
+    FOR EACH ROW
+    EXECUTE FUNCTION prevent_audit_log_change();
+
+DROP TRIGGER IF EXISTS trg_audit_logs_no_truncate ON audit_logs;
+CREATE TRIGGER trg_audit_logs_no_truncate
+    BEFORE TRUNCATE ON audit_logs
+    FOR EACH STATEMENT
+    EXECUTE FUNCTION prevent_audit_log_change();
+
 CREATE INDEX idx_sessions_doctor_date ON sessions (doctor_id, session_date);
 CREATE INDEX idx_sessions_room_date ON sessions (room_id, session_date);
 CREATE INDEX idx_appointments_session_status ON appointments (session_id, status);
@@ -221,4 +249,4 @@ CREATE INDEX idx_notifications_user_created ON notifications (user_id, created_a
 CREATE INDEX idx_audit_logs_created ON audit_logs (created_at DESC);
 CREATE INDEX idx_chat_messages_consultation ON chat_messages (consultation_id, created_at);
 
-REVOKE UPDATE, DELETE ON audit_logs FROM PUBLIC;
+REVOKE UPDATE, DELETE, TRUNCATE ON audit_logs FROM PUBLIC;

@@ -1,14 +1,12 @@
-version: "3.8"
-
 services:
   postgres:
     image: postgres:16-alpine
     container_name: medichannel-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: medichannel
-      POSTGRES_USER: medichannel
-      POSTGRES_PASSWORD: medichannel_secret_password_123
+      POSTGRES_DB: ${DATABASE_NAME:-medichannel}
+      POSTGRES_USER: ${DATABASE_USERNAME:-medichannel}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:?DATABASE_PASSWORD is required in .env}
       TZ: Asia/Colombo
     ports:
       - "5432:5432"
@@ -17,7 +15,7 @@ services:
       - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
       - ./database/seed-data.sql:/docker-entrypoint-initdb.d/02-seed-data.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U medichannel -d medichannel"]
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME:-medichannel} -d ${DATABASE_NAME:-medichannel}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -32,17 +30,19 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      DATABASE_URL: jdbc:postgresql://postgres:5432/medichannel?sslmode=disable
-      DATABASE_USERNAME: medichannel
-      DATABASE_PASSWORD: medichannel_secret_password_123
-      JWT_SECRET: superSecretKeyForMediChannelJwtMustBeAtLeast32BytesLong!
-      JWT_EXPIRATION_MS: 28800000
-      AES_256_KEY: zuUTdXKGhIpZVZFopA65Qy7LZzYiOIRsvGwkXwuFCvo=
-      HMAC_SHA256_KEY: jN4NcAz/f6GM+g8hWw1l/Hm0/vRwNPWvRSyrVjNWMHk=
-      FRONTEND_URL: http://localhost:3000
-      ADMIN_EMAIL: admin@lankacare.lk
-      ADMIN_PASSWORD: AdminPassword#2026
-      ADMIN_FULL_NAME: System Administrator
+      DATABASE_URL: ${DATABASE_URL:-jdbc:postgresql://postgres:5432/medichannel?sslmode=disable}
+      DATABASE_USERNAME: ${DATABASE_USERNAME:-medichannel}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:?DATABASE_PASSWORD is required in .env}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required in .env}
+      JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-28800000}
+      AES_256_KEY: ${AES_256_KEY:?AES_256_KEY is required in .env}
+      HMAC_SHA256_KEY: ${HMAC_SHA256_KEY:?HMAC_SHA256_KEY is required in .env}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@lankacare.lk}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ADMIN_PASSWORD is required in .env}
+      ADMIN_FULL_NAME: ${ADMIN_FULL_NAME:-System Administrator}
+      SEED_DEMO: ${SEED_DEMO:-false}
+      SEED_PASSWORD: ${SEED_PASSWORD:-}
       TZ: Asia/Colombo
     ports:
       - "8080:8080"
@@ -56,12 +56,11 @@ services:
     depends_on:
       - backend
     environment:
-      API_URL: http://backend:8080
-      COOKIE_SECURE: "false"
+      API_URL: ${API_URL:-http://backend:8080}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
       NODE_ENV: production
     ports:
       - "3000:3000"
 
 volumes:
   pgdata:
-

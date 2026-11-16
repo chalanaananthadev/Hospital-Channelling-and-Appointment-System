@@ -1,8 +1,10 @@
 package com.medichannel.service;
 
 import com.medichannel.dto.auth.AuthResponse;
+import com.medichannel.dto.auth.ChangePasswordRequest;
 import com.medichannel.dto.auth.LoginRequest;
 import com.medichannel.entity.UserAccount;
+import com.medichannel.enums.AuditAction;
 import com.medichannel.enums.Role;
 import com.medichannel.exception.ApiException;
 import com.medichannel.repository.PatientRepository;
@@ -201,6 +203,80 @@ class AuthServiceTest {
         assertEquals(HttpStatus.UNAUTHORIZED, ex.getStatus());
         assertEquals("Invalid email or password", ex.getMessage());
         verify(passwordEncoder).matches(eq("SecretPassword#1"), anyString());
+    }
+
+    @Test
+    @DisplayName("changePassword succeeds, updates hash, clears mustChangePassword flag, and logs audit")
+    void testChangePasswordSuccess() {
+        UUID userId = UUID.randomUUID();
+        UserAccount user = new UserAccount();
+        user.setId(userId);
+        user.setPasswordHash("$2a$10$oldHashValue");
+        user.setMustChangePassword(true);
+        user.setFailedLoginAttempts(2);
+
+        ChangePasswordRequest request = new ChangePasswordRequest("OldPassword#1", "NewPassword#2");
+
+        when(userAccountRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("OldPassword#1", "$2a$10$oldHashValue")).thenReturn(true);
+        when(passwordEncoder.encode("NewPassword#2")).thenReturn("$2a$10$newHashValue");
+
+        authService.changePassword(user, request, "192.168.1.50");
+
+        assertEquals("$2a$10$newHashValue", user.getPasswordHash());
+        assertEquals(false, user.isMustChangePassword());
+        assertEquals(0, user.getFailedLoginAttempts());
+        verify(userAccountRepository).save(user);
+        verify(auditService).record(user, AuditAction.PASSWORD_CHANGED, "USER", userId, "192.168.1.50");
+    }
+
+    @Test
+    @DisplayName("changePassword fails when current password does not match")
+    void testChangePasswordFailsWrongCurrentPassword() {
+        UUID userId = UUID.randomUUID();
+        UserAccount user = new UserAccount();
+        user.setId(userId);
+        user.setPasswordHash("$2a$10$oldHashValue");
+        user.setMustChangePassword(true);
+
+        ChangePasswordRequest request = new ChangePasswordRequest("WrongOldPassword#1", "NewPassword#2");
+
+        when(userAccountRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("WrongOldPassword#1", "$2a$10$oldHashValue")).thenReturn(false);
+
+        ApiException ex = assertThrows(ApiException.class, () ->
+                authService.changePassword(user, request, "192.168.1.50")
+        );
+
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+        assertEquals("Current password does not match", ex.getMessage());
+        verify(passwordEncoder, never()).encode(anyString());
+        verify(userAccountRepository, never()).save(any());
+        verify(auditService, never()).record(any(), any(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("changePassword fails when new password matches current password")
+    void testChangePasswordFailsSamePassword() {
+        UUID userId = UUID.randomUUID();
+        UserAccount user = new UserAccount();
+        user.setId(userId);
+        user.setPasswordHash("$2a$10$oldHashValue");
+
+        ChangePasswordRequest request = new ChangePasswordRequest("SamePassword#1", "SamePassword#1");
+
+        when(userAccountRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("SamePassword#1", "$2a$10$oldHashValue")).thenReturn(true);
+
+        ApiException ex = assertThrows(ApiException.class, () ->
+                authService.changePassword(user, request, "192.168.1.50")
+        );
+
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+        assertEquals("New password cannot be the same as the current password", ex.getMessage());
+        verify(passwordEncoder, never()).encode(anyString());
+        verify(userAccountRepository, never()).save(any());
+        verify(auditService, never()).record(any(), any(), any(), any(), any());
     }
 }
 

@@ -13,36 +13,43 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.Immutable;
 
 import java.time.Instant;
 import java.util.UUID;
 
+/**
+ * Immutable operational audit log.
+ * Enforces append-only storage at the entity level via @Immutable and updatable=false.
+ */
 @Entity
 @Table(name = "audit_logs")
+@Immutable
 public class AuditLog {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(updatable = false)
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", updatable = false)
     private UserAccount user;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 80)
+    @Column(nullable = false, length = 80, updatable = false)
     private AuditAction action;
 
-    @Column(name = "entity_type", nullable = false, length = 40)
+    @Column(name = "entity_type", nullable = false, length = 40, updatable = false)
     private String entityType;
 
-    @Column(name = "entity_id")
+    @Column(name = "entity_id", updatable = false)
     private UUID entityId;
 
-    @Column(name = "ip_address", length = 64)
+    @Column(name = "ip_address", length = 64, updatable = false)
     private String ipAddress;
 
-    @Column(name = "created_at", nullable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
     public AuditLog() {}

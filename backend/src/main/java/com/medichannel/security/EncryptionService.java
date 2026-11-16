@@ -32,16 +32,25 @@ public class EncryptionService {
     private final SecureRandom secureRandom = new SecureRandom();
 
     public EncryptionService(@Value("${medichannel.crypto.aes-key}") String aesKeyBase64) {
+        if (aesKeyBase64 == null || aesKeyBase64.isBlank()) {
+            throw new IllegalStateException("AES_256_KEY must be provided via medichannel.crypto.aes-key");
+        }
+        byte[] keyBytes;
+        try {
+            keyBytes = Base64.getDecoder().decode(aesKeyBase64);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalStateException("AES_256_KEY must be a valid Base64 string", e);
+        }
+        if (keyBytes.length != 32) {
+            throw new IllegalStateException("AES_256_KEY must be a Base64-encoded 32-byte key");
+        }
         this.aesKeyBase64 = aesKeyBase64;
+        this.secretKey = new SecretKeySpec(keyBytes, "AES");
+        instance = this;
     }
 
     @PostConstruct
     void init() {
-        byte[] keyBytes = Base64.getDecoder().decode(aesKeyBase64);
-        if (keyBytes.length != 32) {
-            throw new IllegalStateException("AES_256_KEY must be a Base64-encoded 32-byte key");
-        }
-        this.secretKey = new SecretKeySpec(keyBytes, "AES");
         instance = this;
     }
 

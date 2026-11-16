@@ -1,6 +1,7 @@
 package com.medichannel.service;
 
 import com.medichannel.dto.auth.AuthResponse;
+import com.medichannel.dto.auth.ChangePasswordRequest;
 import com.medichannel.dto.auth.LoginRequest;
 import com.medichannel.dto.auth.MeResponse;
 import com.medichannel.dto.auth.RegisterPatientRequest;
@@ -14,6 +15,7 @@ import com.medichannel.repository.UserAccountRepository;
 import com.medichannel.security.HmacSha256Hasher;
 import com.medichannel.security.JwtService;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -103,26 +105,30 @@ public class AuthService {
             throw new ApiException(HttpStatus.CONFLICT, "An account with these details already exists");
         }
 
-        UserAccount user = new UserAccount();
-        user.setEmail(HmacSha256Hasher.normaliseEmail(request.email()));
-        user.setEmailHmac(emailHmac);
-        user.setFullName(request.fullName().trim());
-        user.setPasswordHash(passwordEncoder.encode(request.password()));
-        user.setRole(Role.CUSTOMER);
-        userAccountRepository.save(user);
+        try {
+            UserAccount user = new UserAccount();
+            user.setEmail(HmacSha256Hasher.normaliseEmail(request.email()));
+            user.setEmailHmac(emailHmac);
+            user.setFullName(request.fullName().trim());
+            user.setPasswordHash(passwordEncoder.encode(request.password()));
+            user.setRole(Role.CUSTOMER);
+            userAccountRepository.save(user);
 
-        Patient patient = new Patient();
-        patient.setUser(user);
-        patient.setNic(HmacSha256Hasher.normaliseNic(request.nic()));
-        patient.setNicHmac(nicHmac);
-        patient.setDateOfBirth(request.dateOfBirth().toString());
-        patient.setGender(request.gender());
-        patient.setPhone(request.phone().trim());
-        patient.setAddress(request.address().trim());
-        patientRepository.save(patient);
+            Patient patient = new Patient();
+            patient.setUser(user);
+            patient.setNic(HmacSha256Hasher.normaliseNic(request.nic()));
+            patient.setNicHmac(nicHmac);
+            patient.setDateOfBirth(request.dateOfBirth().toString());
+            patient.setGender(request.gender());
+            patient.setPhone(request.phone().trim());
+            patient.setAddress(request.address().trim());
+            patientRepository.save(patient);
 
-        auditService.record(user, AuditAction.ACCOUNT_CREATED, "USER", user.getId(), ipAddress);
-        return toAuthResponse(user);
+            auditService.record(user, AuditAction.ACCOUNT_CREATED, "USER", user.getId(), ipAddress);
+            return toAuthResponse(user);
+        } catch (DataIntegrityViolationException ex) {
+            throw new ApiException(HttpStatus.CONFLICT, "An account with these details already exists");
+        }
     }
 
     @Transactional(readOnly = true)
@@ -134,6 +140,27 @@ public class AuthService {
                 user.getEmail(),
                 user.isMustChangePassword()
         );
+    }
+
+    @Transactional
+    public void changePassword(UserAccount user, ChangePasswordRequest request, String ipAddress) {
+        UserAccount target = userAccountRepository.findById(user.getId())
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "User not found"));
+
+        if (!passwordEncoder.matches(request.currentPassword(), target.getPasswordHash())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Current password does not match");
+        }
+
+        if (request.newPassword().equals(request.currentPassword())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "New password cannot be the same as the current password");
+        }
+
+        target.setPasswordHash(passwordEncoder.encode(request.newPassword()));
+        target.setMustChangePassword(false);
+        target.setFailedLoginAttempts(0);
+        userAccountRepository.save(target);
+
+        auditService.record(target, AuditAction.PASSWORD_CHANGED, "USER", target.getId(), ipAddress);
     }
 
     private AuthResponse toAuthResponse(UserAccount user) {

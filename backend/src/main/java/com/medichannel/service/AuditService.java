@@ -26,6 +26,9 @@ public class AuditService {
         log.setAction(action);
         log.setEntityType(entityType);
         log.setEntityId(entityId);
+        if (ipAddress != null && ipAddress.length() > 45) {
+            ipAddress = ipAddress.substring(0, 45);
+        }
         log.setIpAddress(ipAddress);
         auditLogRepository.save(log);
     }
