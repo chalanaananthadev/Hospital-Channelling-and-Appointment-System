@@ -4,6 +4,7 @@
 -- email_hmac / nic_hmac store HMAC-SHA256 of the normalised plaintext for lookup.
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
+CREATE EXTENSION IF NOT EXISTS btree_gist;
 
 CREATE TABLE users (
     id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -104,6 +105,14 @@ CREATE TABLE sessions (
         OR (session_type = 'ONLINE' AND room_id IS NULL)
     )
 );
+
+ALTER TABLE sessions ADD CONSTRAINT no_overlapping_doctor_sessions
+    EXCLUDE USING gist (doctor_id WITH =, tsrange(session_date + start_time, session_date + end_time) WITH &&)
+    WHERE (status <> 'CANCELLED');
+
+ALTER TABLE sessions ADD CONSTRAINT no_overlapping_room_sessions
+    EXCLUDE USING gist (room_id WITH =, tsrange(session_date + start_time, session_date + end_time) WITH &&)
+    WHERE (status <> 'CANCELLED' AND room_id IS NOT NULL);
 
 CREATE TABLE appointments (
     id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
