@@ -14,6 +14,7 @@ import com.medichannel.repository.UserAccountRepository;
 import com.medichannel.security.HmacSha256Hasher;
 import com.medichannel.security.JwtService;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -103,26 +104,30 @@ public class AuthService {
             throw new ApiException(HttpStatus.CONFLICT, "An account with these details already exists");
         }
 
-        UserAccount user = new UserAccount();
-        user.setEmail(HmacSha256Hasher.normaliseEmail(request.email()));
-        user.setEmailHmac(emailHmac);
-        user.setFullName(request.fullName().trim());
-        user.setPasswordHash(passwordEncoder.encode(request.password()));
-        user.setRole(Role.CUSTOMER);
-        userAccountRepository.save(user);
+        try {
+            UserAccount user = new UserAccount();
+            user.setEmail(HmacSha256Hasher.normaliseEmail(request.email()));
+            user.setEmailHmac(emailHmac);
+            user.setFullName(request.fullName().trim());
+            user.setPasswordHash(passwordEncoder.encode(request.password()));
+            user.setRole(Role.CUSTOMER);
+            userAccountRepository.save(user);
 
-        Patient patient = new Patient();
-        patient.setUser(user);
-        patient.setNic(HmacSha256Hasher.normaliseNic(request.nic()));
-        patient.setNicHmac(nicHmac);
-        patient.setDateOfBirth(request.dateOfBirth().toString());
-        patient.setGender(request.gender());
-        patient.setPhone(request.phone().trim());
-        patient.setAddress(request.address().trim());
-        patientRepository.save(patient);
+            Patient patient = new Patient();
+            patient.setUser(user);
+            patient.setNic(HmacSha256Hasher.normaliseNic(request.nic()));
+            patient.setNicHmac(nicHmac);
+            patient.setDateOfBirth(request.dateOfBirth().toString());
+            patient.setGender(request.gender());
+            patient.setPhone(request.phone().trim());
+            patient.setAddress(request.address().trim());
+            patientRepository.save(patient);
 
-        auditService.record(user, AuditAction.ACCOUNT_CREATED, "USER", user.getId(), ipAddress);
-        return toAuthResponse(user);
+            auditService.record(user, AuditAction.ACCOUNT_CREATED, "USER", user.getId(), ipAddress);
+            return toAuthResponse(user);
+        } catch (DataIntegrityViolationException ex) {
+            throw new ApiException(HttpStatus.CONFLICT, "An account with these details already exists");
+        }
     }
 
     @Transactional(readOnly = true)
