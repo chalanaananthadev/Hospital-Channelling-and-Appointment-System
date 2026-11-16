@@ -18,13 +18,10 @@ public class WebMvcConfig implements WebMvcConfigurer {
     static class CacheControlInterceptor implements HandlerInterceptor {
         @Override
         public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
-            String path = request.getRequestURI();
-            if (path.startsWith("/api/public/")) {
-                response.setHeader("Cache-Control", "public, max-age=120");
-            } else {
-                response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
-                response.setHeader("Pragma", "no-cache");
-            }
+            // Default security headers: disable caching for all responses.
+            // Public 2xx endpoints explicitly override Cache-Control via ResponseEntity.cacheControl().
+            response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
+            response.setHeader("Pragma", "no-cache");
             response.setHeader("X-Content-Type-Options", "nosniff");
             response.setHeader("X-Frame-Options", "DENY");
             return true;

@@ -3,10 +3,8 @@ package com.medichannel.service;
 import com.medichannel.dto.catalog.NoticeDto;
 import com.medichannel.dto.catalog.PublicDoctorDto;
 import com.medichannel.dto.catalog.SpecialisationDto;
-import com.medichannel.repository.DoctorRepository;
 import com.medichannel.repository.NoticeRepository;
 import com.medichannel.repository.SpecialisationRepository;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,17 +17,17 @@ import java.util.UUID;
 public class PublicCatalogService {
 
     private final SpecialisationRepository specialisationRepository;
-    private final DoctorRepository doctorRepository;
     private final NoticeRepository noticeRepository;
+    private final PublicDoctorCatalogCache doctorCatalogCache;
 
     public PublicCatalogService(
             SpecialisationRepository specialisationRepository,
-            DoctorRepository doctorRepository,
-            NoticeRepository noticeRepository
+            NoticeRepository noticeRepository,
+            PublicDoctorCatalogCache doctorCatalogCache
     ) {
         this.specialisationRepository = specialisationRepository;
-        this.doctorRepository = doctorRepository;
         this.noticeRepository = noticeRepository;
+        this.doctorCatalogCache = doctorCatalogCache;
     }
 
     @Cacheable("publicSpecialisations")
@@ -40,24 +38,12 @@ public class PublicCatalogService {
                 .toList();
     }
 
-    @Cacheable(value = "publicDoctors", key = "#specialisationId ?: 'all'")
-    @Transactional(readOnly = true)
     public List<PublicDoctorDto> listDoctors(UUID specialisationId) {
-        return doctorRepository.findPublicCatalog(specialisationId).stream()
-                .map(doctor -> new PublicDoctorDto(
-                        doctor.getId(),
-                        doctor.getUser().getFullName(),
-                        doctor.getSpecialisation().getName(),
-                        doctor.getSpecialisation().getId(),
-                        doctor.getQualifications(),
-                        doctor.getConsultationFee(),
-                        doctor.getBio()
-                ))
-                .toList();
+        return doctorCatalogCache.getPublicDoctors(specialisationId);
     }
 
     public List<PublicDoctorDto> searchDoctors(UUID specialisationId, String name) {
-        List<PublicDoctorDto> doctors = listDoctors(specialisationId);
+        List<PublicDoctorDto> doctors = doctorCatalogCache.getPublicDoctors(specialisationId);
         if (name == null || name.isBlank()) {
             return doctors;
         }
@@ -74,8 +60,13 @@ public class PublicCatalogService {
                 .toList();
     }
 
-    @CacheEvict(value = {"publicDoctors", "publicSpecialisations"}, allEntries = true)
+    /**
+     * Evicts cached doctor and specialisation catalog data.
+     * Callable by other beans (e.g. Member 2 doctor/session services).
+     * Delegates to {@link PublicDoctorCatalogCache#evictPublicCatalog()} across bean boundary
+     * so Spring's AOP cache proxy processes the @CacheEvict annotation.
+     */
     public void evictPublicCatalog() {
-        // Called by doctor/session services when catalog data changes (Member 2).
+        doctorCatalogCache.evictPublicCatalog();
     }
 }
