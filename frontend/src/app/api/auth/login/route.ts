@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { backendFetch } from "@/lib/api";
+import { backendFetch, extractClientIp } from "@/lib/api";
 import { cookieOptions, ACCESS_COOKIE } from "@/lib/cookies";
 
 export const runtime = "nodejs";
@@ -7,17 +7,21 @@ export const runtime = "nodejs";
 export async function POST(request: NextRequest) {
   try {
     const payload = await request.json();
-    const forwardedFor = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
-    const headers: Record<string, string> = {};
-    if (forwardedFor) {
-      headers["X-Forwarded-For"] = forwardedFor;
+    const clientIp = extractClientIp(request);
+    const extraHeaders: Record<string, string> = {};
+    if (clientIp) {
+      extraHeaders["X-Forwarded-For"] = clientIp;
     }
 
-    const upstream = await backendFetch("/api/auth/login", {
-      method: "POST",
-      body: JSON.stringify(payload),
-      headers
-    });
+    const upstream = await backendFetch(
+      "/api/auth/login",
+      {
+        method: "POST",
+        body: JSON.stringify(payload)
+      },
+      null,
+      extraHeaders
+    );
 
     const body = await upstream.json().catch(() => ({}));
     if (!upstream.ok) {

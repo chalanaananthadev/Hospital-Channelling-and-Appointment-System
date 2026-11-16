@@ -30,7 +30,7 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request, HttpServletRequest http) {
-        AuthResponse body = authService.login(request, clientIp(http));
+        AuthResponse body = authService.login(request, http.getRemoteAddr());
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noStore())
                 .body(body);
@@ -41,7 +41,7 @@ public class AuthController {
             @Valid @RequestBody RegisterPatientRequest request,
             HttpServletRequest http
     ) {
-        AuthResponse body = authService.registerPatient(request, clientIp(http));
+        AuthResponse body = authService.registerPatient(request, http.getRemoteAddr());
         return ResponseEntity.status(HttpStatus.CREATED)
                 .cacheControl(CacheControl.noStore())
                 .body(body);
@@ -52,13 +52,5 @@ public class AuthController {
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noStore())
                 .body(authService.me(principal.getUser()));
-    }
-
-    private String clientIp(HttpServletRequest request) {
-        String forwarded = request.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) {
-            return forwarded.split(",")[0].trim();
-        }
-        return request.getRemoteAddr();
     }
 }
