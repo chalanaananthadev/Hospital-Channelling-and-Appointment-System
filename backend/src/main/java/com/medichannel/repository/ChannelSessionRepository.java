@@ -32,6 +32,12 @@ public interface ChannelSessionRepository extends JpaRepository<ChannelSession, 
     @EntityGraph(attributePaths = {"doctor", "doctor.user", "doctor.specialisation", "room"})
     List<ChannelSession> findBySessionDateGreaterThanEqualOrderBySessionDateAscStartTimeAsc(LocalDate fromDate);
 
+    @EntityGraph(attributePaths = {"doctor", "doctor.user", "doctor.specialisation", "room"})
+    List<ChannelSession> findByDoctorIdOrderBySessionDateDescStartTimeAsc(UUID doctorId);
+
+    @EntityGraph(attributePaths = {"doctor", "doctor.user", "doctor.specialisation", "room"})
+    List<ChannelSession> findByDoctorIdAndSessionDateOrderByStartTimeAsc(UUID doctorId, LocalDate sessionDate);
+
     /**
      * BR-02: Checks whether the doctor already has a non-cancelled overlapping session on the same date.
      * Back-to-back sessions (end == next start) are allowed.

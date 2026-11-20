@@ -31,6 +31,9 @@ public interface DoctorRepository extends JpaRepository<Doctor, UUID> {
     @EntityGraph(attributePaths = {"user", "specialisation"})
     Optional<Doctor> findWithDetailsById(UUID id);
 
+    @EntityGraph(attributePaths = {"user", "specialisation"})
+    Optional<Doctor> findWithDetailsByUserId(UUID userId);
+
     Optional<Doctor> findBySlmcNumberIgnoreCase(String slmcNumber);
 
     boolean existsBySlmcNumberIgnoreCaseAndIdNot(String slmcNumber, UUID id);
